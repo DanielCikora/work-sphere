@@ -1,54 +1,72 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import DOMPurify from "dompurify";
 import axios from "axios";
 import { JobsDataTypes } from "@/utils/dataTypes/dataTypes";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBookmark as faBookmarkSolid } from "@fortawesome/free-solid-svg-icons";
 import { faBookmark as faBookmarkRegular } from "@fortawesome/free-regular-svg-icons";
-export default function Jobs() {
+import Button from "../ui/Button";
+import Modal from "../ui/Modal";
+interface JobsProps {
+  salaryRange: number;
+}
+export default function Jobs({ salaryRange }: JobsProps) {
   const [jobs, setJobs] = useState<JobsDataTypes[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [showDetailsModal, setShowDetailsModal] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState<JobsDataTypes[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [saveJob, setSaveJob] = useState<Record<string, boolean>>(() => {
+  const [saveJob, setSaveJob] = useState<Record<string, boolean>>({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 9;
+  const detailsRef = useRef<HTMLDivElement>(null);
+  const handleClickOutside = (event: MouseEvent) => {
+    if (
+      detailsRef.current &&
+      !detailsRef.current.contains(event.target as Node)
+    ) {
+      setShowDetailsModal(false);
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+  useEffect(() => {
     if (typeof window !== "undefined") {
       const savedJobs = localStorage.getItem("savedJobs");
-      return savedJobs ? JSON.parse(savedJobs) : {};
+      setSaveJob(savedJobs ? JSON.parse(savedJobs) : {});
     }
-    return {};
-  });
+  }, []);
   useEffect(() => {
     localStorage.setItem("savedJobs", JSON.stringify(saveJob));
   }, [saveJob]);
   useEffect(() => {
-    const jobsData = async () => {
+    setLoading(true);
+    const fetchJobs = async () => {
       try {
-        const response = await axios.get("https://remoteok.com/api");
-        const filteredJobs = response.data.slice(1);
-        setJobs(filteredJobs);
+        const response = await axios.get(
+          "https://jobicy.com/api/v2/remote-jobs"
+        );
+        console.log(response.data.jobs);
+        setJobs(response.data.jobs);
         setError(null);
-        setSearch(filteredJobs);
+        setSearch(response.data.jobs);
       } catch (error) {
         console.error(error);
-        setError("Try again");
+        setError("Failed to load jobs. Please try again.");
       } finally {
         setLoading(false);
       }
     };
-    jobsData();
+    fetchJobs();
   }, []);
-  if (error) {
-    return <div>Please try again.</div>;
-  }
-  if (loading) {
-    return (
-      <div className='h-dvh w-full grid place-items-center'>
-        <div className='loader'></div>
-      </div>
-    );
-  }
-  const handleSaveJob = (id: string) => {
+  const handleSaveJob = (id: number) => {
     setSaveJob((prevState) => ({ ...prevState, [id]: !prevState[id] }));
   };
   const formatDate = (isoDate: string) => {
@@ -65,14 +83,17 @@ export default function Jobs() {
     const filteredItems = jobs.filter((job) => {
       const searchTermLower = searchTerm.toLowerCase();
       return (
-        job.position.toLowerCase().includes(searchTermLower) ||
-        job.company.toLowerCase().includes(searchTermLower) ||
-        job.location.toLowerCase().includes(searchTermLower) ||
-        (Array.isArray(job.tags) &&
-          job.tags.some((tag) => tag.toLowerCase().includes(searchTermLower)))
+        job.jobTitle.toLowerCase().includes(searchTermLower) ||
+        job.companyName.toLowerCase().includes(searchTermLower) ||
+        job.jobGeo.toLowerCase().includes(searchTermLower) ||
+        (Array.isArray(job.jobIndustry) &&
+          job.jobIndustry.some((industry) =>
+            industry.toLowerCase().includes(searchTermLower)
+          ))
       );
     });
     setSearch(filteredItems);
+    setCurrentPage(1);
   };
   const handleSearchKeyPress = (
     event: React.KeyboardEvent<HTMLInputElement>
@@ -81,14 +102,32 @@ export default function Jobs() {
       handleSearchClick();
     }
   };
+  const totalItems = search.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentItems = search.slice(startIndex, endIndex);
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
+  if (loading) {
+    return (
+      <div className='h-dvh w-full grid place-items-center'>
+        <div className='loader'></div>
+      </div>
+    );
+  }
   return (
     <>
       <section className='search-container flex justify-center gap-2 mb-8'>
-        <label className='input flex w-full max-w-[600px] items-center gap-2 pr-2'>
+        <label className='search-input flex w-full max-w-[600px] items-center gap-2 pr-2 bg-inherit'>
           <input
             onChange={(event) => setSearchTerm(event.target.value)}
             type='text'
-            className='py-2.5 px-2 block w-full border-2 border-solid border-light-border rounded'
+            className='py-2.5 px-2 bg-inherit block w-full border-2 border-solid border-light-border rounded bg-light-background dark:bg-dark-background dark:text-dark-primaryText text-light-primaryText placeholder-light-secondaryText dark:placeholder-dark-secondaryText'
             placeholder='Search by job position, company, location, or skills...'
             onKeyDown={handleSearchKeyPress}
           />
@@ -96,7 +135,8 @@ export default function Jobs() {
             xmlns='http://www.w3.org/2000/svg'
             viewBox='0 0 16 16'
             fill='currentColor'
-            className='h-6 w-6 opacity-70'
+            className='h-6 w-6 opacity-70 cursor-pointer'
+            onClick={handleSearchClick}
           >
             <path
               fillRule='evenodd'
@@ -105,88 +145,148 @@ export default function Jobs() {
             />
           </svg>
         </label>
-        <button
-          className='block font-medium sm:w-fit w-full sm:text-left text-center border-2 border-solid rounded py-1 px-4 hover:bg-black hover:text-white border-black transition-all duration-200 ease-in-out'
-          onClick={handleSearchClick}
-        >
-          Search
-        </button>
       </section>
       <section className='jobs grid gap-4 lg:grid-cols-3 sm:grid-cols-2 grid-cols-1 text-left place-items-center'>
-        {search &&
-          search.map((job) => (
-            <div
-              className='w-full max-w-full min-h-[400px] text-left p-4 rounded-md bg-white border border-solid border-light-border text-light-primaryText'
-              key={job.id}
-            >
-              <ul className='w-full text-left mb-4'>
-                <div className='flex flex-col w-full'>
-                  <div className='flex flex-row justify-between w-full'>
-                    <h2 className='md:text-md sm:text-sm text-xs font-medium mb-2 text-center'>
-                      {formatDate(job.date)}
-                    </h2>
-                    <button type='button' onClick={() => handleSaveJob(job.id)}>
-                      <FontAwesomeIcon
-                        icon={
-                          saveJob[job.id] ? faBookmarkSolid : faBookmarkRegular
-                        }
-                        className='block cursor-pointer md:text-xl text-lg text-black'
-                      />
-                    </button>
-                  </div>
-                  <div className='grid p-1 place-items-center md:h-16 h-12 md:w-16 w-12 overflow-hidden md:mb-4 mb-2'>
-                    <img
-                      className='block w-full h-auto'
-                      src={
-                        job.company_logo ||
-                        "https://www.adobe.com/creativecloud/design/discover/minimalist-logo-design.html"
-                      }
-                      alt='no logo'
-                    />
-                  </div>
-                </div>
-                <li className='md:text-xl sm:text-lg text-md font-semibold md:min-h-[60px] min-h-[50px]'>
-                  {job.position}
-                </li>
-                <li className='md:text-lg sm:text-md text-sm md:min-h-[60px] min-h-[50px]'>
-                  {job.company}
-                </li>
-                <li className='md:text-md sm:text-sm text-xs md:min-h-[60px] min-h-[50px]'>
-                  {job.location}
-                </li>
-                <li className='md:text-md sm:text-sm text-xs min-h-[50px] text-wrap flex xl:flex-row flex-col gap-2'>
-                  {Array.isArray(job.tags)
-                    ? job.tags.slice(0, 3).map((tag, index) => (
-                        <span
-                          className='border-2 w-fit h-fit border-solid border-light-border rounded py-0.5 px-1 capitalize'
-                          key={index}
-                        >
-                          {tag}
-                        </span>
-                      ))
-                    : "No tags"}
-                </li>
-              </ul>
-              <div className='md:border-t border-solid border-light-border'>
-                <div className='flex md:text-lg sm:text-md text-sm xl:flex-row flex-col w-full sm:items-center sm:justify-between gap-2 mt-4'>
-                  {job.salary_max === 0 && job.salary_min === 0 ? (
-                    <h3>Internship</h3>
-                  ) : (
-                    <h3>
-                      {job.salary_min} - {job.salary_max} $
-                    </h3>
-                  )}
-                  <a
-                    href={job.apply_url}
-                    target='_blank'
-                    className='block font-medium sm:w-fit w-full sm:text-left text-center border-2 border-solid rounded py-1 px-2 hover:bg-black hover:text-white border-black transition-all duration-200 ease-in-out'
+        {currentItems.map((job) => (
+          <div
+            className='w-full max-w-full min-h-[400px] text-left p-4 rounded-md bg-light-cardBackground dark:bg-dark-cardBackground border border-solid border-light-border dark:border-dark-border text-light-primaryText dark:text-dark-primaryText'
+            key={job.id}
+          >
+            <ul className='w-full text-left mb-4'>
+              <div className='flex flex-col w-full'>
+                <div className='flex flex-row justify-between w-full'>
+                  <h2 className='md:text-md sm:text-sm text-xs font-medium mb-2 text-center'>
+                    {formatDate(job.pubDate)}
+                  </h2>
+                  <button
+                    aria-label={`Save job ${job.jobTitle}`}
+                    type='button'
+                    onClick={() => handleSaveJob(job.id)}
                   >
-                    Apply now
-                  </a>
+                    <FontAwesomeIcon
+                      icon={
+                        saveJob[job.id] ? faBookmarkSolid : faBookmarkRegular
+                      }
+                      className='block cursor-pointer md:text-xl text-lg text-black dark:text-white'
+                    />
+                  </button>
+                </div>
+                <div className='grid p-1 place-items-center md:h-16 h-12 md:w-16 w-12 overflow-hidden md:mb-4 mb-2'>
+                  <img
+                    className='block w-full h-auto'
+                    src={
+                      job.companyLogo ||
+                      "https://www.adobe.com/creativecloud/design/discover/minimalist-logo-design.html"
+                    }
+                    alt='No Logo'
+                  />
                 </div>
               </div>
+              <li className='md:text-xl sm:text-lg text-md font-semibold md:min-h-[60px] min-h-[50px]'>
+                {job.jobTitle}
+              </li>
+              <li className='md:text-lg sm:text-md text-sm md:min-h-[60px] min-h-[50px]'>
+                {job.companyName}
+              </li>
+              <li className='md:text-md sm:text-sm text-xs md:min-h-[60px] min-h-[50px]'>
+                {job.jobGeo}
+              </li>
+              <li className='md:text-md sm:text-sm text-xs min-h-[50px] text-wrap flex xl:flex-row flex-col gap-2'>
+                {Array.isArray(job.jobIndustry)
+                  ? job.jobIndustry.map((industry, index) => (
+                      <span
+                        className='border-2 w-fit h-fit border-solid border-light-border dark:border-dark-border rounded py-0.5 px-1 capitalize'
+                        key={index}
+                      >
+                        {industry}
+                      </span>
+                    ))
+                  : "No industry"}
+              </li>
+            </ul>
+            <div className='md:border-t border-solid border-light-border dark:border-dark-border'>
+              <div className='flex md:text-lg sm:text-md text-sm xl:flex-row flex-col w-full sm:items-center sm:justify-between gap-2 mt-4'>
+                {job.annualSalaryMax === undefined &&
+                job.annualSalaryMin === undefined ? (
+                  <h3>Salary information not available.</h3>
+                ) : (
+                  <h3>
+                    {job.annualSalaryMin} - {job.annualSalaryMax}{" "}
+                    {job.salaryCurrency}
+                  </h3>
+                )}
+                <Button
+                  className='block font-medium sm:w-fit w-full sm:text-left text-center border-2 border-solid rounded py-1 px-2 hover:bg-black hover:text-white border-black dark:border-white dark:hover:bg-dark-accent dark:hover:text-dark-primaryText transition-all duration-200 ease-in-out'
+                  onClick={() => setShowDetailsModal(true)}
+                  text='View More'
+                  type='button'
+                />
+                {showDetailsModal && (
+                  <Modal
+                    className='max-w-[1400px] w-full max-h-full h-full overflow-y-auto text-black dark:text-darkPrimaryText'
+                    closeModal={() => setShowDetailsModal(false)}
+                    ref={detailsRef}
+                  >
+                    <h2 className='mb-8 text-2xl font-semibold'>
+                      {job.jobTitle}
+                    </h2>
+                    <h3 className='text-xl mb-4'>
+                      At:{" "}
+                      <strong className='text-2xl font-medium text-gray-800'>
+                        {job.companyName}
+                      </strong>
+                    </h3>
+                    <div
+                      className='details'
+                      dangerouslySetInnerHTML={{
+                        __html: DOMPurify.sanitize(job.jobDescription),
+                      }}
+                    />
+                    <a
+                      href={job.url}
+                      className='block mt-6 text-black font-medium sm:w-fit w-full sm:text-left text-center border-2 border-solid rounded py-1 px-2 hover:bg-black hover:text-white border-black dark:border-dark-border dark:hover:bg-dark-accent dark:hover:text-dark-primaryText transition-all duration-200 ease-in-out'
+                    >
+                      Apply now
+                    </a>
+                  </Modal>
+                )}
+              </div>
             </div>
-          ))}
+          </div>
+        ))}
+      </section>
+      <section className='pagination flex justify-center gap-2 mt-8'>
+        <button
+          disabled={currentPage === 1}
+          onClick={() => handlePageChange(currentPage - 1)}
+          className={`py-2 px-4 rounded ${
+            currentPage === 1 ? "bg-gray-300" : "bg-gray-200"
+          } dark:bg-gray-700 dark:text-white`}
+        >
+          Previous
+        </button>
+        {Array.from({ length: totalPages }, (_, index) => (
+          <button
+            key={index}
+            onClick={() => handlePageChange(index + 1)}
+            className={`py-2 px-4 rounded ${
+              currentPage === index + 1
+                ? "bg-inherit text-gray-700 dark:text-white border border-solid border-gray-700 dark:border-white"
+                : "bg-gray-200 text-black dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
+            }`}
+          >
+            {index + 1}
+          </button>
+        ))}
+        <button
+          disabled={currentPage === totalPages}
+          onClick={() => handlePageChange(currentPage + 1)}
+          className={`py-2 px-4 rounded ${
+            currentPage === totalPages ? "bg-gray-300" : "bg-gray-200"
+          } dark:bg-gray-700 dark:text-white`}
+        >
+          Next
+        </button>
       </section>
     </>
   );

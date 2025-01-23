@@ -1,15 +1,18 @@
 export interface JobsDataTypes {
-  apply_url: string;
-  company: string;
-  company_logo: string;
-  date: string;
-  description: string;
-  id: string;
-  location: string;
-  position: string;
-  salary_min: number;
-  salary_max: number;
-  tags: string[];
+  annualSalaryMax: number;
+  annualSalaryMin: number;
+  salaryCurrency: string;
+  companyLogo: string;
+  companyName: string;
+  id: number;
+  jobDescription: string;
+  jobExcerpt: string;
+  jobGeo: string;
+  jobIndustry: string[];
+  jobLevel: string;
+  jobTitle: string;
+  jobType: string[];
+  pubDate: string;
   url: string;
 }
 export interface TitleTextDataTypes {

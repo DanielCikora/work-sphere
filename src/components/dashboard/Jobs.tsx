@@ -63,6 +63,16 @@ const Jobs = () => {
     };
     fetchJobs();
   }, []);
+  useEffect(() => {
+    const filteredJobs = jobs.filter((job) => {
+      const { annualSalaryMin, annualSalaryMax } = job;
+      if (annualSalaryMin !== undefined && annualSalaryMax !== undefined) {
+        return annualSalaryMax <= salaryRange;
+      }
+      return false;
+    });
+    setSearch(filteredJobs);
+  }, [salaryRange, jobs]);
   const handleSaveJob = (id: number) => {
     setSaveJob((prevState) => ({ ...prevState, [id]: !prevState[id] }));
   };
@@ -143,17 +153,20 @@ const Jobs = () => {
           </svg>
         </label>
       </section>
-      <div className='mx-auto max-w-[800px]'>
+      <section className='salary-range mx-auto max-w-[800px]'>
         <input
-          onChange={(event) => setSalaryRange(Number(event.target.value))}
           type='range'
-          min='Internship'
-          max='1000000'
+          min='0'
+          max='500000'
+          step='10000'
           value={salaryRange}
-          className='range block'
+          onChange={(event) => setSalaryRange(Number(event.target.value))}
+          className='range block w-full'
         />
-        <h3 className='text-center'>Salary: {salaryRange} $</h3>
-      </div>
+        <h3 className='text-center text-lg'>
+          {`Salary Range: Up to ${salaryRange} $`}
+        </h3>
+      </section>
       <section className='jobs grid gap-4 lg:grid-cols-3 sm:grid-cols-2 grid-cols-1 text-left place-items-center'>
         {currentItems.map((job) => (
           <div

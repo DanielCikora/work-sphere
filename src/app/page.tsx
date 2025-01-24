@@ -1,19 +1,22 @@
-"use client";
 import Dashboard from "@/components/dashboard/Dashboard";
-import Footer from "@/components/footer/Footer";
-import { RootState } from "@/store/store";
-import { useSelector } from "react-redux";
+import { Metadata } from "next";
+export const metadata: Metadata = {
+  title: "Work Sphere",
+  description: "Work Sphere - Job Searching platform created by Daniel Cikora",
+  icons: {
+    icon: [
+      {
+        url: "/icons/WorkSphereLightModeIcon.ico",
+        media: "(prefers-color-scheme: light)",
+      },
+      {
+        url: "/icons/WorkSphereDarkModeIcon.ico",
+        media: "(prefers-color-scheme: dark)",
+      },
+    ],
+  },
+};
 const Home = () => {
-  const isDarkMode = useSelector(
-    (state: RootState) => state.darkMode.isDarkMode
-  );
-  return (
-    <>
-      <main>
-        <Dashboard />
-      </main>
-      <Footer />
-    </>
-  );
+  return <Dashboard />;
 };
 export default Home;

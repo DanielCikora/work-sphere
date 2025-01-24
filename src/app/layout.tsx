@@ -1,13 +1,10 @@
 "use client";
-import type { Metadata } from "next";
 import { Provider } from "react-redux";
-import store, { RootState } from "@/store/store";
-import { useDispatch, useSelector } from "react-redux";
-import { setDarkMode } from "@/store/reduxSlices/darkModeSlice";
+import store from "@/store/store";
 import "../styles/globals.css";
 import "../styles/loader.css";
 import Navigation from "@/components/navigation/Navigation";
-import { useEffect } from "react";
+import Footer from "@/components/footer/Footer";
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -18,7 +15,8 @@ export default function RootLayout({
       <body className='antialiased bg-lightBackground text-lightPrimaryText dark:bg-darkBackground dark:text-darkPrimaryText'>
         <Provider store={store}>
           <Navigation />
-          {children}
+          <main>{children}</main>
+          <Footer />
         </Provider>
       </body>
     </html>

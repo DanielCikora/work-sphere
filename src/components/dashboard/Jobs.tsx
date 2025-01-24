@@ -8,18 +8,16 @@ import { faBookmark as faBookmarkSolid } from "@fortawesome/free-solid-svg-icons
 import { faBookmark as faBookmarkRegular } from "@fortawesome/free-regular-svg-icons";
 import Button from "../ui/Button";
 import Modal from "../ui/Modal";
-interface JobsProps {
-  salaryRange: number;
-}
-export default function Jobs({ salaryRange }: JobsProps) {
+const Jobs = () => {
   const [jobs, setJobs] = useState<JobsDataTypes[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [showDetailsModal, setShowDetailsModal] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState<JobsDataTypes[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState<string>("");
   const [saveJob, setSaveJob] = useState<Record<string, boolean>>({});
   const [currentPage, setCurrentPage] = useState(1);
+  const [salaryRange, setSalaryRange] = useState<number>(500000);
   const itemsPerPage = 9;
   const detailsRef = useRef<HTMLDivElement>(null);
   const handleClickOutside = (event: MouseEvent) => {
@@ -30,7 +28,6 @@ export default function Jobs({ salaryRange }: JobsProps) {
       setShowDetailsModal(false);
     }
   };
-
   useEffect(() => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
@@ -122,8 +119,8 @@ export default function Jobs({ salaryRange }: JobsProps) {
   }
   return (
     <>
-      <section className='search-container flex justify-center gap-2 mb-8'>
-        <label className='search-input flex w-full max-w-[600px] items-center gap-2 pr-2 bg-inherit'>
+      <section className='search-container justify-center flex gap-2 mb-8'>
+        <label className='search-input flex w-full max-w-[600px] items-center gap-2 bg-inherit'>
           <input
             onChange={(event) => setSearchTerm(event.target.value)}
             type='text'
@@ -146,6 +143,17 @@ export default function Jobs({ salaryRange }: JobsProps) {
           </svg>
         </label>
       </section>
+      <div className='mx-auto max-w-[800px]'>
+        <input
+          onChange={(event) => setSalaryRange(Number(event.target.value))}
+          type='range'
+          min='Internship'
+          max='1000000'
+          value={salaryRange}
+          className='range block'
+        />
+        <h3 className='text-center'>Salary: {salaryRange} $</h3>
+      </div>
       <section className='jobs grid gap-4 lg:grid-cols-3 sm:grid-cols-2 grid-cols-1 text-left place-items-center'>
         {currentItems.map((job) => (
           <div
@@ -208,7 +216,7 @@ export default function Jobs({ salaryRange }: JobsProps) {
               <div className='flex md:text-lg sm:text-md text-sm xl:flex-row flex-col w-full sm:items-center sm:justify-between gap-2 mt-4'>
                 {job.annualSalaryMax === undefined &&
                 job.annualSalaryMin === undefined ? (
-                  <h3>Salary information not available.</h3>
+                  <h3>Salary not available.</h3>
                 ) : (
                   <h3>
                     {job.annualSalaryMin} - {job.annualSalaryMax}{" "}
@@ -216,7 +224,7 @@ export default function Jobs({ salaryRange }: JobsProps) {
                   </h3>
                 )}
                 <Button
-                  className='block font-medium sm:w-fit w-full sm:text-left text-center border-2 border-solid rounded py-1 px-2 hover:bg-black hover:text-white border-black dark:border-white dark:hover:bg-dark-accent dark:hover:text-dark-primaryText transition-all duration-200 ease-in-out'
+                  className='block font-medium sm:w-fit w-full sm:text-left text-center border-2 border-solid rounded py-1 px-2 hover:bg-black dark:hover:bg-white dark:hover:text-black hover:text-white border-black dark:border-white dark:hover:bg-dark-accent dark:hover:text-dark-primaryText transition-all duration-200 ease-in-out'
                   onClick={() => setShowDetailsModal(true)}
                   text='View More'
                   type='button'
@@ -290,4 +298,5 @@ export default function Jobs({ salaryRange }: JobsProps) {
       </section>
     </>
   );
-}
+};
+export default Jobs;

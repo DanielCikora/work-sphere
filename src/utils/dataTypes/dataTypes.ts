@@ -6,9 +6,8 @@ export interface JobsDataTypes {
   companyName: string;
   id: number;
   jobDescription: string;
-  jobExcerpt: string;
   jobGeo: string;
-  jobIndustry: string[];
+  jobIndustry: string;
   jobLevel: string;
   jobTitle: string;
   jobType: string[];

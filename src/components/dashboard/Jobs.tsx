@@ -11,13 +11,15 @@ import Modal from "../ui/Modal";
 const Jobs = () => {
   const [jobs, setJobs] = useState<JobsDataTypes[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [jobIndustries, setJobIndustries] = useState<string[]>([]);
+  const [selectedIndustry, setSelectedIndustry] = useState<string | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState<JobsDataTypes[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [saveJob, setSaveJob] = useState<Record<string, boolean>>({});
   const [currentPage, setCurrentPage] = useState(1);
-  const [salaryRange, setSalaryRange] = useState<number>(500000);
+  const [salaryRange, setSalaryRange] = useState<number>(750000);
   const itemsPerPage = 9;
   const detailsRef = useRef<HTMLDivElement>(null);
   const handleClickOutside = (event: MouseEvent) => {
@@ -44,16 +46,21 @@ const Jobs = () => {
     localStorage.setItem("savedJobs", JSON.stringify(saveJob));
   }, [saveJob]);
   useEffect(() => {
-    setLoading(true);
     const fetchJobs = async () => {
       try {
-        const response = await axios.get(
+        const response = await axios.get<{ jobs: JobsDataTypes[] }>(
           "https://jobicy.com/api/v2/remote-jobs"
         );
-        console.log(response.data.jobs);
         setJobs(response.data.jobs);
-        setError(null);
         setSearch(response.data.jobs);
+        const industries: string[] = [
+          ...new Set(
+            response.data.jobs
+              .flatMap((job: JobsDataTypes) => job.jobIndustry || [])
+              .map((industry: string) => industry.trim())
+          ),
+        ];
+        setJobIndustries(industries);
       } catch (error) {
         console.error(error);
         setError("Failed to load jobs. Please try again.");
@@ -66,6 +73,9 @@ const Jobs = () => {
   useEffect(() => {
     const filteredJobs = jobs.filter((job) => {
       const { annualSalaryMin, annualSalaryMax } = job;
+      if (annualSalaryMin === undefined && annualSalaryMax === undefined) {
+        return "Salary Unspecified";
+      }
       if (annualSalaryMin !== undefined && annualSalaryMax !== undefined) {
         return annualSalaryMax <= salaryRange;
       }
@@ -129,6 +139,39 @@ const Jobs = () => {
   }
   return (
     <>
+      <section className='filter-buttons flex flex-wrap gap-2 justify-center my-4'>
+        <button
+          className={`px-4 py-2 rounded ${
+            selectedIndustry === null
+              ? "bg-black text-white dark:bg-white dark:text-black"
+              : "bg-gray-200 dark:bg-gray-700 dark:text-white"
+          }`}
+          onClick={() => {
+            setSelectedIndustry(null);
+            setSearch(jobs);
+          }}
+        >
+          All Industries
+        </button>
+        {jobIndustries.map((industry) => (
+          <button
+            key={industry}
+            className={`px-4 py-2 rounded ${
+              selectedIndustry === industry
+                ? "bg-black text-white dark:bg-white dark:text-black"
+                : "bg-gray-200 dark:bg-gray-700 dark:text-white"
+            }`}
+            onClick={() => {
+              setSelectedIndustry(industry);
+              const filteredJobs = jobs.filter((job) =>
+                job.jobIndustry?.includes(industry)
+              );
+              setSearch(filteredJobs);
+            }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(industry) }}
+          />
+        ))}
+      </section>
       <section className='search-container justify-center flex gap-2 mb-8'>
         <label className='search-input flex w-full max-w-[600px] items-center gap-2 bg-inherit'>
           <input
@@ -157,8 +200,8 @@ const Jobs = () => {
         <input
           type='range'
           min='0'
-          max='500000'
-          step='10000'
+          max='750000'
+          step='25000'
           value={salaryRange}
           onChange={(event) => setSalaryRange(Number(event.target.value))}
           className='range block w-full'
@@ -212,24 +255,18 @@ const Jobs = () => {
               <li className='md:text-md sm:text-sm text-xs md:min-h-[60px] min-h-[50px]'>
                 {job.jobGeo}
               </li>
-              <li className='md:text-md sm:text-sm text-xs min-h-[50px] text-wrap flex xl:flex-row flex-col gap-2'>
-                {Array.isArray(job.jobIndustry)
-                  ? job.jobIndustry.map((industry, index) => (
-                      <span
-                        className='border-2 w-fit h-fit border-solid border-light-border dark:border-dark-border rounded py-0.5 px-1 capitalize'
-                        key={index}
-                      >
-                        {industry}
-                      </span>
-                    ))
-                  : "No industry"}
-              </li>
+              <li
+                dangerouslySetInnerHTML={{
+                  __html: DOMPurify.sanitize(job.jobIndustry),
+                }}
+                className='md:text-md sm:text-sm text-xs min-h-[50px] text-wrap flex xl:flex-row flex-col gap-2'
+              />
             </ul>
             <div className='md:border-t border-solid border-light-border dark:border-dark-border'>
               <div className='flex md:text-lg sm:text-md text-sm xl:flex-row flex-col w-full sm:items-center sm:justify-between gap-2 mt-4'>
                 {job.annualSalaryMax === undefined &&
                 job.annualSalaryMin === undefined ? (
-                  <h3>Salary not available.</h3>
+                  <h3>Salary Unspecified.</h3>
                 ) : (
                   <h3>
                     {job.annualSalaryMin} - {job.annualSalaryMax}{" "}

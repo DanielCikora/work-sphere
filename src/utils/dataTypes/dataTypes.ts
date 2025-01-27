@@ -18,3 +18,8 @@ export interface TitleTextDataTypes {
   titleText: string;
   titleClass: string;
 }
+export interface NavigationLinksDataTypes {
+  id: number;
+  href: string;
+  text: string;
+}

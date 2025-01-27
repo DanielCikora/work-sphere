@@ -35,7 +35,7 @@ const Footer = () => {
               }
               width={70}
               height={70}
-              alt='logo'
+              alt='work-sphere-logo'
             />
           </Link>
           <p className='mt-4 max-w-[300px]'>

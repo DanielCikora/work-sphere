@@ -1,0 +1,24 @@
+.hamburger-menu {
+  display: flex;
+  gap: 12px;
+  font-size: 20px;
+  font-weight: 600;
+}
+@media only screen and (max-width: 768px) {
+  .hamburger-menu {
+    display: none;
+  }
+}
+.hamburger-menu--open {
+  display: flex;
+  flex-flow: column;
+  align-items: center;
+  position: absolute;
+  width: 100%;
+  left: 0;
+  top: 58px;
+  padding-top: 80px;
+  font-size: 26px;
+  font-weight: 500;
+  min-height: 100dvh;
+}

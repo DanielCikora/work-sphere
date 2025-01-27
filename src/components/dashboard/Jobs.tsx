@@ -19,7 +19,7 @@ const Jobs = () => {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [saveJob, setSaveJob] = useState<Record<string, boolean>>({});
   const [currentPage, setCurrentPage] = useState(1);
-  const [salaryRange, setSalaryRange] = useState<number>(750000);
+  const [salaryRange, setSalaryRange] = useState<number>(500000);
   const itemsPerPage = 9;
   const detailsRef = useRef<HTMLDivElement>(null);
   const handleClickOutside = (event: MouseEvent) => {
@@ -71,18 +71,41 @@ const Jobs = () => {
     fetchJobs();
   }, []);
   useEffect(() => {
-    const filteredJobs = jobs.filter((job) => {
-      const { annualSalaryMin, annualSalaryMax } = job;
-      if (annualSalaryMin === undefined && annualSalaryMax === undefined) {
-        return "Salary Unspecified";
+    const applyFilters = () => {
+      let filteredJobs = jobs;
+      if (selectedIndustry) {
+        filteredJobs = filteredJobs.filter((job) =>
+          job.jobIndustry?.includes(selectedIndustry)
+        );
       }
-      if (annualSalaryMin !== undefined && annualSalaryMax !== undefined) {
-        return annualSalaryMax <= salaryRange;
+      if (searchTerm) {
+        const searchTermLower = searchTerm.toLowerCase();
+        filteredJobs = filteredJobs.filter(
+          (job) =>
+            job.jobTitle.toLowerCase().includes(searchTermLower) ||
+            job.companyName.toLowerCase().includes(searchTermLower) ||
+            job.jobGeo.toLowerCase().includes(searchTermLower) ||
+            (Array.isArray(job.jobIndustry) &&
+              job.jobIndustry.some((industry) =>
+                industry.toLowerCase().includes(searchTermLower)
+              ))
+        );
       }
-      return false;
-    });
-    setSearch(filteredJobs);
-  }, [salaryRange, jobs]);
+      filteredJobs = filteredJobs.filter((job) => {
+        const { annualSalaryMin, annualSalaryMax } = job;
+        if (annualSalaryMin === undefined && annualSalaryMax === undefined) {
+          return "Salary Unspecified.";
+        }
+        if (annualSalaryMin !== undefined && annualSalaryMax !== undefined) {
+          return annualSalaryMax <= salaryRange;
+        }
+        return false;
+      });
+      setSearch(filteredJobs);
+    };
+    applyFilters();
+  }, [selectedIndustry, searchTerm, salaryRange, jobs]);
+
   const handleSaveJob = (id: number) => {
     setSaveJob((prevState) => ({ ...prevState, [id]: !prevState[id] }));
   };
@@ -178,7 +201,7 @@ const Jobs = () => {
             onChange={(event) => setSearchTerm(event.target.value)}
             type='text'
             className='py-2.5 px-2 bg-inherit block w-full border-2 border-solid border-light-border rounded bg-light-background dark:bg-dark-background dark:text-dark-primaryText text-light-primaryText placeholder-light-secondaryText dark:placeholder-dark-secondaryText'
-            placeholder='Search by job position, company, location, or skills...'
+            placeholder='Search by job position, company, location, or industry...'
             onKeyDown={handleSearchKeyPress}
           />
           <svg
@@ -200,8 +223,8 @@ const Jobs = () => {
         <input
           type='range'
           min='0'
-          max='750000'
-          step='25000'
+          max={500000}
+          step='10000'
           value={salaryRange}
           onChange={(event) => setSalaryRange(Number(event.target.value))}
           className='range block w-full'

@@ -14,9 +14,9 @@ const Modal: React.FC<PropsWithChildren<ModalDataTypes>> = ({
   ref,
 }) => {
   return (
-    <dialog className='fixed w-dvw h-dvh bg-black bg-opacity-[0.02] inset-0 md:pb-4 md:pt-20 py-2 md:px-8 px-2 z-10 grid place-items-center'>
+    <dialog className='fixed w-dvw h-dvh bg-black bg-opacity-[0.02] inset-0 md:pb-4 md:pt-20 pt-[66px] md:px-8 z-10 grid place-items-center'>
       <div
-        className={`rounded w-fit h-fit relative z-50 dark:bg-gray-700 bg-white px-20 py-6 ${className}`}
+        className={`sm:rounded w-fit h-fit relative z-50 dark:bg-gray-700 bg-white sm:px-20 px-[20px] md:py-6 py-2 ${className}`}
         ref={ref}
       >
         <button

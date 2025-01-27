@@ -42,7 +42,7 @@ const Navigation = () => {
           <ul
             className={`hamburger-menu${
               dropdownMenuOpen ? " hamburger-menu--open" : ""
-            } bg-white dark:bg-darkBackground`}
+            } bg-lightBackground dark:bg-darkBackground`}
           >
             {navigationLinks.map((navigationLink) => (
               <li key={navigationLink.id}>

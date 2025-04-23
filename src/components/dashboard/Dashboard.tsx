@@ -1,6 +1,5 @@
 "use client";
-import Jobs from "./Jobs";
-import Image from "next/image";
+import Jobs from "./jobs/Jobs";
 import Title from "../ui/Title";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
@@ -12,17 +11,14 @@ const Dashboard = () => {
     <section className='dashboard pt-20'>
       <div className='wrapper'>
         <div className='logo-container pt-4 flex flex-col items-center w-full'>
-          <Image
+          <img
             src={
               isDarkMode
                 ? "/images/WorkSphereDarkMode.png"
                 : "/images/WorkSphereLightMode.png"
             }
-            width={300}
-            height={300}
             alt='logo'
-            className='mb-2'
-            priority
+            className='mb-2 w-full h-auto max-w-[300px] max-h-[300px]'
           />
           <Title titleClass='text-xl' titleText='Find Your Dream Job' />
         </div>

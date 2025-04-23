@@ -49,6 +49,7 @@ const Navigation = () => {
                 <Link
                   className='hover:text-accent hover:underline'
                   href={navigationLink.href}
+                  onClick={() => setDropDownMenuOpen(false)}
                 >
                   {navigationLink.text}
                 </Link>
